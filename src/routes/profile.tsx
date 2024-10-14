@@ -136,13 +136,14 @@ export default function Profile() {
 
     const onSave = () => {
         const authNow = getAuth();
-        updateProfile(authNow.currentUser, {
-            displayName: displayname,
-        }).then(() => {
-            console.log('Profile updated!');
-        }).catch((error) => {
-            console.log(error);
-        });
+        if (authNow !== null)
+            updateProfile(authNow.currentUser!, {
+                displayName: displayname,
+            }).then(() => {
+                console.log('Profile updated!');
+            }).catch((error) => {
+                console.log(error);
+            });
 
         setShowInput(false);
     };
