@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 import { auth, db, storage } from '../routes/firebase';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { getAuth, updateProfile } from 'firebase/auth';
 import { collection, getDocs, limit, orderBy, query, where } from 'firebase/firestore';
@@ -65,23 +65,46 @@ const SaveBtn = styled.button`
     background-color: #1d96f0;
     color: white;
     font-size: 10px;
-    //border-radius: 10%;
     border: 0;
-    height: 20px;
+    height: 25px;
+    border: 0;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 5px;
+    width: 80px;
+`;
+
+const CancelBtn = styled.button`
+    background-color: #f01d8a;
+    color: white;
+    font-size: 10px;
+    border: 0;
+    height: 25px;
     border: 0;
     padding: 5px 10px;
     text-transform: uppercase;
     cursor: pointer;
     border-radius: 5px;
+    width: 80px;
+`;
+
+const ViewNmWarapper = styled.div`
+    display: flex;
+    gap: 5px;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
 `;
 
 export default function Profile() {
+    const [isSaving, setSaving] = useState(false);
     const [showInput, setShowInput] = useState(false);
     const [tweets, setTweets] = useState<ITweet[]>([]);
     const user = auth.currentUser;
     const userName = user?.displayName ? user.displayName : 'Anonymous';
     const [displayname, setDisplayname] = useState(userName);
     const [avatar, setAvatar] = useState(user?.photoURL);
+    const [orgDisNm, setOrgDisNm] = useState(userName);
     const onAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const { files } = e.target;
         if (!user) return;
@@ -129,23 +152,42 @@ export default function Profile() {
         setShowInput(true);
     };
 
+    const onCancel = () => {
+        setDisplayname(orgDisNm);
+        setShowInput(false);
+    };
+
     const onChangeName = (e: React.ChangeEvent<HTMLInputElement>) => {
         const userDisNm = e.target.value;
         setDisplayname(userDisNm);
     };
 
-    const onSave = () => {
-        const authNow = getAuth();
-        if (authNow !== null)
-            updateProfile(authNow.currentUser!, {
-                displayName: displayname,
-            }).then(() => {
-                console.log('Profile updated!');
-            }).catch((error) => {
-                console.log(error);
-            });
+    const onSave = async () => {
+        setSaving(true);
 
-        setShowInput(false);
+        try {
+            const authNow = getAuth();
+
+            console.log('authNow', authNow);
+
+            if (authNow !== null) {
+                await updateProfile(authNow.currentUser!, {
+                    displayName: displayname,
+                }).then(() => {
+                    console.log('Profile updated!');
+                    setOrgDisNm(displayname);
+                }).catch((error) => {
+                    console.log(error);
+                });
+            } else {
+                console.log('authNow', authNow);
+            }
+        } catch (e) {
+            console.log(e);
+        } finally {
+            setSaving(false);
+            setShowInput(false);
+        }
     };
 
     return (
@@ -166,10 +208,14 @@ export default function Profile() {
             </AvatarUpload>
             <AvatarInput onChange={onAvatarChange} type='file' id='avatar' accept='image/*' />
             {showInput ?
-                <EditWarapper><EditName type='text' onBlur={() => setShowInput(false)} onChange={onChangeName} value={displayname} /><SaveBtn onClick={onSave}>SAVE</SaveBtn></EditWarapper> :
-                <Name onClick={switchSpan}>
-                    {displayname}
-                </Name>
+                <EditWarapper>
+                    <EditName type='text' onChange={onChangeName} value={displayname} />
+                    <SaveBtn onClick={onSave}>{isSaving ? 'Saving...' : 'SAVE'}</SaveBtn>
+                    <CancelBtn onClick={onCancel}>calcel</CancelBtn>
+                </EditWarapper> :
+                <ViewNmWarapper>
+                    <Name id='spanDisNm' onClick={switchSpan}>{displayname}</Name>
+                </ViewNmWarapper>
             }
             <Tweets>
                 {tweets.map((tweet) => <Tweet key={tweet.id} {...tweet} />)}

@@ -226,6 +226,9 @@ export default function Tweet({ username, photo, tweet, userId, id }: ITweet) {
         if (files && files.length === 1) {
             const mb = 1024 * 1024;//1mb
             const limitSize = mb * 2;
+
+            console.log(`limitSize:[${limitSize}], fileSize:[${files[0].size}]`);
+
             if (files[0].size > limitSize) {
                 alert(`2mb 사이즈 미만의 이미지만 업로드 가능합니다.`);
                 setFile(null);
